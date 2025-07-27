@@ -1,13 +1,73 @@
-注意文件目录；
-本wallet-monitor目录要和The browser wallet URL of account [address].txt这些文件放在同一级。
+# BrokerChain Network Wallet Monitor
 
-  本地模式（直接打开HTML）：
-  1. 运行 generate_config.bat或者generate_config.sh 生成 wallet_config.js
-  2. 直接在浏览器中打开 wallet_monitor_auto.html
-  3. 会自动加载本地配置并直接连接钱包端口
+A real-time monitoring dashboard for BrokerChain network wallets, displaying node status, balances, and network analytics.
 
-  API模式（服务器模式）：
-  1. 运行 npm install  
-  2. 运行 npm start 启动服务器
-  3. 访问 http://localhost:8099
-  4. 使用API接口获取数据，功能更完整
+![Wallet Monitor Dashboard](page.png)
+
+## Features
+
+- **Real-time monitoring** of multiple wallet nodes
+- **Network status overview** with active/inactive node counts
+- **Balance tracking** across all connected wallets
+- **Auto-refresh** capability with configurable intervals
+- **Export functionality** for data analysis
+- **Responsive dashboard** with dark theme UI
+
+## Installation
+
+```bash
+npm install
+```
+
+## Usage
+
+### API Mode (Server Mode) - Recommended
+
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+2. Start the server:
+   ```bash
+   npm start
+   ```
+
+3. Open your browser and visit:
+   ```
+   http://localhost:8099
+   ```
+
+### Local Mode (Direct HTML)
+
+1. Generate configuration:
+   ```bash
+   # On Windows
+   generate_config.bat
+   
+   # On Linux/Mac
+   ./generate_config.sh
+   ```
+
+2. Open `wallet_monitor_auto.html` in your browser
+
+## Configuration
+
+**Important**: The `wallet_monitor` directory should be placed at the same level as your wallet URL files:
+```
+parent_directory/
+├── wallet_monitor/
+└── The browser wallet URL of account [address].txt
+```
+
+The application automatically scans for wallet URL files and generates the configuration.
+
+## API Endpoints
+
+- `GET /api/wallets` - List all configured wallets
+- `GET /api/wallet/:address/balance` - Get specific wallet balance
+- `GET /api/network/status` - Get complete network status
+
+## License
+
+MIT License - see [LICENSE](LICENSE) file for details.

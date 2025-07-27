@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BrokerChain Network Dashboard</title>
+    <script src="wallet_config.js" onerror="console.log('Local config not found, will try API mode')"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0c1426 0%, #1e293b 50%, #334155 100%);
+            color: #e2e8f0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .dashboard-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header-section {
+            text-align: center;
+            margin-bottom: 3rem;
+            position: relative;
+        }
+
+        .header-section::before {
+            content: '';
+            position: absolute;
+            top: -50px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+            z-index: -1;
+        }
+
+        .main-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #06b6d4 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: #94a3b8;
+            font-weight: 400;
+        }
+
+        .control-panel {
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .control-group {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .action-btn {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+        }
+
+        .action-btn:active {
+            transform: translateY(0);
+        }
+
+        .action-btn.secondary {
+            background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+        }
+
+        .action-btn.secondary:hover {
+            box-shadow: 0 8px 25px rgba(100, 116, 139, 0.3);
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 60px;
+            height: 30px;
+            background: #475569;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-switch.active {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 24px;
+            height: 24px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .toggle-switch.active::after {
+            transform: translateX(30px);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .stat-card {
+            background: rgba(30, 41, 59, 0.9);
+            border: 1px solid rgba(59, 130, 246, 0.1);
+            border-radius: 20px;
+            padding: 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6, #06b6d4);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(59, 130, 246, 0.3);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 500;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #e2e8f0;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-change {
+            font-size: 0.8rem;
+            color: #10b981;
+        }
+
+        .nodes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .node-card {
+            background: rgba(30, 41, 59, 0.95);
+            border: 1px solid rgba(71, 85, 105, 0.3);
+            border-radius: 16px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .node-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: 4px;
+            background: #64748b;
+            transition: all 0.3s ease;
+        }
+
+        .node-card.node-online::before {
+            background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+        }
+
+        .node-card.node-offline::before {
+            background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%);
+        }
+
+        .node-card.node-loading::before {
+            background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
+        }
+
+        .node-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(59, 130, 246, 0.4);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+        }
+
+        .node-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .node-address {
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.8rem;
+            color: #64748b;
+            background: rgba(51, 65, 85, 0.8);
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+            max-width: 240px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            border: 1px solid rgba(71, 85, 105, 0.4);
+        }
+
+        .node-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #64748b;
+        }
+
+        .node-online .status-indicator {
+            background: #10b981;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+        }
+
+        .node-offline .status-indicator {
+            background: #ef4444;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+        }
+
+        .node-loading .status-indicator {
+            background: #f59e0b;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .balance-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 1.5rem 0;
+        }
+
+        .balance-amount {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #e2e8f0;
+        }
+
+        .balance-high {
+            color: #10b981;
+        }
+
+        .balance-medium {
+            color: #f59e0b;
+        }
+
+        .balance-low {
+            color: #ef4444;
+        }
+
+        .port-badge {
+            background: rgba(59, 130, 246, 0.2);
+            color: #3b82f6;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .node-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .node-btn {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .node-btn.primary {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white;
+        }
+
+        .node-btn.secondary {
+            background: rgba(71, 85, 105, 0.6);
+            color: #e2e8f0;
+            border: 1px solid rgba(71, 85, 105, 0.8);
+        }
+
+        .node-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .node-btn.primary:hover {
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+        }
+
+        .node-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .error-panel {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 8px;
+            padding: 0.75rem;
+            margin-top: 1rem;
+            font-size: 0.8rem;
+            color: #fca5a5;
+        }
+
+        .timestamp-info {
+            font-size: 0.75rem;
+            color: #64748b;
+            margin-top: 0.75rem;
+            text-align: right;
+        }
+
+        .footer-info {
+            text-align: center;
+            margin: 3rem 0 1rem;
+            padding: 1.5rem;
+            color: #64748b;
+            font-size: 0.9rem;
+            border-top: 1px solid rgba(71, 85, 105, 0.3);
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid #ffffff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .no-config {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 16px;
+            margin: 2rem 0;
+        }
+
+        .no-config h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .no-config code {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-container {
+                padding: 1rem;
+            }
+
+            .main-title {
+                font-size: 2rem;
+            }
+
+            .control-panel {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .nodes-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .node-address {
+                max-width: 180px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="header-section">
+            <h1 class="main-title">BrokerChain Network</h1>
+            <p class="subtitle">Distributed Node Monitoring & Analytics Platform</p>
+        </div>
+
+        <div class="control-panel">
+            <div class="control-group">
+                <button class="action-btn" onclick="refreshAll()" id="refreshBtn">
+                    <span>🔄</span> Refresh Network
+                </button>
+                <button class="action-btn secondary" onclick="exportData()">
+                    <span>📊</span> Export Data
+                </button>
+            </div>
+            <div class="control-group">
+                <span style="color: #94a3b8; font-size: 0.9rem;">Auto-refresh:</span>
+                <div class="toggle-switch" id="autoToggle" onclick="toggleAutoRefresh()"></div>
+                <span id="autoStatus" style="color: #94a3b8; font-size: 0.9rem;">ON (30s)</span>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Network Nodes</div>
+                <div class="stat-value" id="totalNodes">-</div>
+                <div class="stat-change">Total registered</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Active Nodes</div>
+                <div class="stat-value" id="activeNodes">-</div>
+                <div class="stat-change">Currently online</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Inactive Nodes</div>
+                <div class="stat-value" id="inactiveNodes">-</div>
+                <div class="stat-change">Require attention</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total Balance</div>
+                <div class="stat-value" id="totalBalance">-</div>
+                <div class="stat-change">Network BKC supply</div>
+            </div>
+        </div>
+
+        <div class="nodes-grid" id="nodesGrid">
+            <div style="text-align: center; padding: 3rem; color: #64748b;">
+                <div class="loading-spinner" style="width: 24px; height: 24px; margin-bottom: 1rem;"></div>
+                <div>Initializing network discovery...</div>
+            </div>
+        </div>
+
+        <div class="footer-info" id="lastUpdate">
+            Last network scan: Never
+        </div>
+    </div>
+
+    <script>
+        let wallets = [];
+        let autoRefreshInterval = null;
+        let isRefreshing = false;
+        let autoRefreshEnabled = true;
+        const API_BASE = window.location.origin;
+
+        // Initialize wallets from API or local config
+        async function initializeWallets() {
+            // First try API mode
+            try {
+                const response = await fetch(`${API_BASE}/api/wallets`);
+                const result = await response.json();
+                
+                if (result.success && result.data.length) {
+                    wallets = result.data.map(config => ({
+                        address: config.address,
+                        port: config.port,
+                        url: `http://127.0.0.1:${config.port}`,
+                        status: 'loading',
+                        balance: 0,
+                        error: null,
+                        lastCheck: null
+                    }));
+                    console.log('Using API mode');
+                    return true;
+                }
+            } catch (error) {
+                console.log('API not available, trying local config...');
+            }
+            
+            // Fallback to local config mode
+            try {
+                // Check if WALLET_CONFIG is available (loaded via script tag)
+                if (typeof WALLET_CONFIG !== 'undefined' && WALLET_CONFIG.length > 0) {
+                    wallets = WALLET_CONFIG.map(config => ({
+                        address: config.address,
+                        port: config.port,
+                        url: config.url,
+                        status: 'loading',
+                        balance: 0,
+                        error: null,
+                        lastCheck: null
+                    }));
+                    console.log('Using local config mode');
+                    return true;
+                }
+            } catch (error) {
+                console.error('Failed to load local config:', error);
+            }
+            
+            // No config found
+            document.getElementById('nodesGrid').innerHTML = `
+                <div class="no-config">
+                    <h3>⚠️ Configuration Missing</h3>
+                    <p>Network configuration not found. Please run the configuration generator first.</p>
+                    <br>
+                    <p><strong>Linux/WSL:</strong> <code>./generate_config.sh</code></p>
+                    <p><strong>Windows:</strong> <code>generate_config.bat</code></p>
+                    <br>
+                    <p><strong>API Mode:</strong> Run <code>npm start</code> for full server functionality</p>
+                    <p><strong>Local Mode:</strong> Open HTML directly after generating config</p>
+                </div>
+            `;
+            return false;
+        }
+
+        // Check wallet status via API or direct connection
+        async function checkWallet(wallet) {
+            // Try API mode first
+            try {
+                const response = await fetch(`${API_BASE}/api/wallet/${wallet.address}/balance`);
+                if (response.ok) {
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        wallet.status = result.data.status;
+                        wallet.balance = result.data.balance;
+                        wallet.error = result.data.error;
+                    } else {
+                        wallet.status = result.data.status;
+                        wallet.balance = result.data.balance;
+                        wallet.error = result.data.error;
+                    }
+                    wallet.lastCheck = new Date();
+                    return;
+                }
+            } catch (error) {
+                // API not available, try direct connection
+            }
+            
+            // Fallback to direct wallet connection
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 6000);
+                
+                const response = await fetch(`${wallet.url}/api/balance`, {
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    wallet.status = 'online';
+                    wallet.balance = parseFloat(data.balance) || 0;
+                    wallet.error = null;
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                wallet.lastCheck = new Date();
+            } catch (error) {
+                wallet.status = 'offline';
+                wallet.balance = 0;
+                wallet.error = error.name === 'AbortError' ? 'Connection timeout' : error.message;
+                wallet.lastCheck = new Date();
+            }
+        }
+
+        // Render node card
+        function renderNodeCard(wallet) {
+            const balanceClass = wallet.balance > 10 ? 'balance-high' : wallet.balance > 1 ? 'balance-medium' : 'balance-low';
+            const shortAddress = `${wallet.address.substring(0, 12)}...${wallet.address.substring(wallet.address.length - 8)}`;
+            
+            return `
+                <div class="node-card node-${wallet.status}">
+                    <div class="node-header">
+                        <div class="node-address" title="${wallet.address}">${shortAddress}</div>
+                        <div class="node-status">
+                            <div class="status-indicator"></div>
+                            ${wallet.status.toUpperCase()}
+                            ${wallet.status === 'loading' ? '<div class="loading-spinner"></div>' : ''}
+                        </div>
+                    </div>
+                    <div class="balance-section">
+                        <div class="balance-amount ${wallet.status === 'online' ? balanceClass : ''}">
+                            ${wallet.status === 'online' ? wallet.balance.toFixed(6) + ' BKC' : 'Unavailable'}
+                        </div>
+                        <div class="port-badge">Port ${wallet.port}</div>
+                    </div>
+                    ${wallet.error ? `<div class="error-panel">🚨 ${wallet.error}</div>` : ''}
+                    <div class="node-actions">
+                        <a href="${wallet.url}" target="_blank" class="node-btn primary">
+                            <span>🌐</span> Open Node
+                        </a>
+                        <button class="node-btn secondary" onclick="refreshWallet('${wallet.address}')" 
+                                ${wallet.status === 'loading' ? 'disabled' : ''}>
+                            <span>🔄</span> ${wallet.status === 'loading' ? 'Checking...' : 'Refresh'}
+                        </button>
+                    </div>
+                    ${wallet.lastCheck ? `<div class="timestamp-info">Last checked: ${wallet.lastCheck.toLocaleTimeString()}</div>` : ''}
+                </div>
+            `;
+        }
+
+        // Render all nodes
+        function renderNodes() {
+            const grid = document.getElementById('nodesGrid');
+            if (wallets.length === 0) return;
+            
+            grid.innerHTML = wallets.map(renderNodeCard).join('');
+            
+            // Update statistics
+            const totalNodes = wallets.length;
+            const activeNodes = wallets.filter(w => w.status === 'online').length;
+            const inactiveNodes = wallets.filter(w => w.status === 'offline').length;
+            const totalBalance = wallets
+                .filter(w => w.status === 'online')
+                .reduce((sum, w) => sum + w.balance, 0);
+            
+            document.getElementById('totalNodes').textContent = totalNodes;
+            document.getElementById('activeNodes').textContent = activeNodes;
+            document.getElementById('inactiveNodes').textContent = inactiveNodes;
+            document.getElementById('totalBalance').textContent = totalBalance.toFixed(6) + ' BKC';
+            
+            // Update timestamp
+            document.getElementById('lastUpdate').textContent = 
+                `Last network scan: ${new Date().toLocaleString()}`;
+        }
+
+        // Refresh single wallet
+        async function refreshWallet(address) {
+            const wallet = wallets.find(w => w.address === address);
+            if (wallet && wallet.status !== 'loading') {
+                wallet.status = 'loading';
+                wallet.error = null;
+                renderNodes();
+                await checkWallet(wallet);
+                renderNodes();
+            }
+        }
+
+        // Refresh all wallets using network status API
+        async function refreshAll() {
+            if (isRefreshing) return;
+            
+            isRefreshing = true;
+            const refreshBtn = document.getElementById('refreshBtn');
+            refreshBtn.innerHTML = '<div class="loading-spinner"></div> Scanning...';
+            refreshBtn.disabled = true;
+            
+            // Mark all as loading
+            wallets.forEach(w => {
+                w.status = 'loading';
+                w.error = null;
+            });
+            renderNodes();
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/network/status`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Update wallet data from API response
+                    result.data.wallets.forEach(apiWallet => {
+                        const wallet = wallets.find(w => w.address === apiWallet.address);
+                        if (wallet) {
+                            wallet.status = apiWallet.status;
+                            wallet.balance = apiWallet.balance;
+                            wallet.error = apiWallet.error;
+                            wallet.lastCheck = new Date();
+                        }
+                    });
+                } else {
+                    throw new Error('API request failed');
+                }
+            } catch (error) {
+                console.error('Network status refresh failed:', error);
+                // Fallback to individual checks
+                await Promise.all(wallets.map(checkWallet));
+            }
+            
+            renderNodes();
+            refreshBtn.innerHTML = '<span>🔄</span> Refresh Network';
+            refreshBtn.disabled = false;
+            isRefreshing = false;
+        }
+
+        // Auto-refresh functionality
+        function toggleAutoRefresh() {
+            const toggle = document.getElementById('autoToggle');
+            const status = document.getElementById('autoStatus');
+            
+            autoRefreshEnabled = !autoRefreshEnabled;
+            
+            if (autoRefreshEnabled) {
+                toggle.classList.add('active');
+                startAutoRefresh();
+                status.textContent = 'ON (30s)';
+            } else {
+                toggle.classList.remove('active');
+                stopAutoRefresh();
+                status.textContent = 'OFF';
+            }
+        }
+
+        function startAutoRefresh() {
+            stopAutoRefresh();
+            autoRefreshInterval = setInterval(refreshAll, 30000);
+        }
+
+        function stopAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+            }
+        }
+
+        // Export data functionality
+        function exportData() {
+            const data = {
+                timestamp: new Date().toISOString(),
+                network_summary: {
+                    total_nodes: wallets.length,
+                    active_nodes: wallets.filter(w => w.status === 'online').length,
+                    inactive_nodes: wallets.filter(w => w.status === 'offline').length,
+                    total_balance_bkc: wallets.filter(w => w.status === 'online').reduce((sum, w) => sum + w.balance, 0)
+                },
+                nodes: wallets.map(w => ({
+                    address: w.address,
+                    port: w.port,
+                    status: w.status,
+                    balance_bkc: w.balance,
+                    error: w.error,
+                    last_checked: w.lastCheck
+                }))
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `brokerchain_network_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Initialize application
+        async function init() {
+            if (!initializeWallets()) return;
+            
+            // Set initial toggle state
+            document.getElementById('autoToggle').classList.add('active');
+            
+            renderNodes();
+            await refreshAll();
+            startAutoRefresh();
+        }
+
+        // Start the application when page loads
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>

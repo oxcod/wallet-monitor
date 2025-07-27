@@ -1,5 +1,5 @@
 注意文件目录；
-本wallet_monitor目录要和The browser wallet URL of account [address].txt这些文件放在同一级。
+本wallet-monitor目录要和The browser wallet URL of account [address].txt这些文件放在同一级。
 
   本地模式（直接打开HTML）：
   1. 运行 generate_config.bat或者generate_config.sh 生成 wallet_config.js
